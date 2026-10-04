@@ -759,8 +759,7 @@
 <script>
 (function(){
 
-    /* ====== DEKODER HASŁA ====== */
-    document.addEventListener("DOMContentLoaded", function(){
+   (function(){
 
     function decodePassword(encodedBase64, key) {
         const step1 = atob(encodedBase64);
@@ -774,7 +773,7 @@
     const PASSWORD = decodePassword("SmxmRH5zdXJ0Yn80NTY3==", 7);
     let unlocked = false;
 
-    function createLockScreen() {
+    function initLock() {
         if(!document.body) return;
         if(document.getElementById("access_lock_overlay")) return;
 
@@ -811,33 +810,36 @@
         box.appendChild(btn);
         overlay.appendChild(box);
         document.body.appendChild(overlay);
-    }
 
-    createLockScreen();
-
-    const observer = new MutationObserver(() => {
-        if(!unlocked){
-            createLockScreen();
-        }
-    });
-
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-
-    const form = document.getElementById("dataGenerator");
-    if(form){
-        form.addEventListener("submit", function(e){
-            if(!unlocked){
-                e.preventDefault();
-                alert("🔒 Najpierw wpisz poprawne hasło!");
-                createLockScreen();
+        // Strażnik sprawdzający, czy ktoś nie usunął nakładki przez narzędzia deweloperskie
+        const observer = new MutationObserver(() => {
+            if(!unlocked && !document.getElementById("access_lock_overlay")){
+                initLock();
             }
         });
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // Blokada formularza
+        const form = document.getElementById("dataGenerator");
+        if(form){
+            form.addEventListener("submit", function(e){
+                if(!unlocked){
+                    e.preventDefault();
+                    alert("🔒 Najpierw wpisz poprawne hasło!");
+                    initLock();
+                }
+            });
+        }
     }
 
-});
+    // SPRAWDZENIE: Jeśli strona już się załadowała, odpal od razu. W przeciwnym razie czekaj.
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initLock);
+    } else {
+        initLock();
+    }
+
+})();
 </script>
 </body>
 </html>
